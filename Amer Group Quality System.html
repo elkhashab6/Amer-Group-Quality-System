@@ -1,0 +1,3520 @@
+<html><head><base href="/" />
+    <meta charset="UTF-8">
+    <title>نظام تقارير الجودة - عامر جروب للإلكترونيات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/regression@2.0.1/dist/regression.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            direction: rtl;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #4a154b;
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            padding-bottom: 15px;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 4px;
+            background: linear-gradient(90deg, #764ba2, #667eea);
+            border-radius: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group i {
+            position: absolute;
+            right: 15px;
+            top: 42px;
+            color: #764ba2;
+            font-size: 1.2em;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #4a154b;
+            font-size: 1.1em;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 15px 45px 15px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.2);
+            outline: none;
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .statistics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+            background: linear-gradient(135deg, #f6f9fc 0%, #f1f4f9 100%);
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(118, 75, 162, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            padding: 18px 35px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.2em;
+            width: 100%;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(118, 75, 162, 0.3);
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper:after {
+            content: '\f107';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #764ba2;
+            font-size: 1.2em;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .form-group input:valid,
+        .form-group textarea:valid,
+        .form-group select:valid {
+            border-color: #667eea;
+        }
+
+        .reports-table {
+            width: 100%;
+            margin-top: 40px;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .reports-table th,
+        .reports-table td {
+            padding: 15px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+        }
+
+        .reports-table th {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        .reports-table tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-btn,
+        .delete-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .edit-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #ff4b4b;
+            color: white;
+        }
+
+        .edit-btn:hover,
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .reports-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 12px;
+        }
+
+        .reports-section h2 {
+            color: #4a154b;
+            margin-bottom: 20px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .search-section {
+            margin-bottom: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .search-group {
+            position: relative;
+        }
+
+        .search-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a154b;
+            font-weight: bold;
+        }
+
+        .search-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-group input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.1);
+            outline: none;
+        }
+
+        .table-toggle-btn {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .table-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .reports-table-container {
+            display: none; /* Hide table by default */
+        }
+
+        .reports-table-container.show {
+            display: block;
+        }
+
+        .pareto-analysis {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        .control-charts {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .chart-selector {
+            margin-bottom: 20px;
+        }
+
+        .chart-selector select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 250px;
+        }
+
+        .distribution-analysis {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .root-cause-analysis {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .five-whys-tool {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 8px;
+        }
+
+        .why-item {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .why-item textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            min-height: 60px;
+            margin-top: 8px;
+        }
+
+        .why-chain {
+            padding-right: 30px;
+            border-right: 2px dashed #764ba2;
+            margin: 20px 0;
+        }
+
+        .why-chain .why-item {
+            position: relative;
+        }
+
+        .why-chain .why-item::before {
+            content: 'لماذا؟';
+            position: absolute;
+            right: -50px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #764ba2;
+            font-weight: bold;
+        }
+
+        .add-why-btn {
+            background: #764ba2;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fishbone-diagram {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 8px;
+        }
+
+        .fishbone-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .fishbone-controls select,
+        .fishbone-controls input {
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+        }
+
+        .fishbone-canvas-container {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            height: 500px;
+        }
+
+        .regression-analysis {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .regression-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .select-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .select-group label {
+            margin-bottom: 8px;
+            color: #4a154b;
+            font-weight: bold;
+        }
+
+        .select-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .regression-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item h4 {
+            color: #4a154b;
+            margin-bottom: 8px;
+        }
+
+        .stat-item p {
+            font-size: 1.1em;
+            color: #764ba2;
+            font-weight: bold;
+        }
+        
+        .quality-checklist {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .checklist-controls {
+            margin-bottom: 20px;
+        }
+
+        .add-checklist-btn {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .add-checklist-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .checklist-item {
+            background: #f8f9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .checklist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .checklist-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #4a154b;
+        }
+
+        .checklist-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .checklist-steps {
+            margin-bottom: 15px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .step-item:last-child {
+            border-bottom: none;
+        }
+
+        .step-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #764ba2;
+        }
+
+        .step-text {
+            flex-grow: 1;
+        }
+
+        .step-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .add-step-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .add-step-input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+        }
+
+        .add-step-btn {
+            background: #764ba2;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+            .regression-controls {
+                grid-template-columns: 1fr;
+            }
+            .regression-stats {
+                grid-template-columns: 1fr;
+            }
+            .variance-controls {
+                grid-template-columns: 1fr;
+            }
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            .trend-controls {
+                grid-template-columns: 1fr;
+            }
+            .simulation-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .variance-analysis {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .variance-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .variance-chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+
+        .variance-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .variance-stats .stat-box {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .variance-stats h4 {
+            color: #4a154b;
+            margin-bottom: 10px;
+        }
+
+        .variance-stats p {
+            font-size: 1.2em;
+            color: #764ba2;
+            font-weight: bold;
+        }
+
+        .kpi-dashboard {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, #f6f9fc 0%, #f1f4f9 100%);
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .kpi-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #764ba2;
+            font-size: 1.5em;
+            box-shadow: 0 4px 10px rgba(118, 75, 162, 0.1);
+        }
+
+        .kpi-content {
+            flex-grow: 1;
+        }
+
+        .kpi-content h3 {
+            color: #4a154b;
+            margin: 0 0 5px 0;
+            font-size: 1em;
+        }
+
+        .kpi-content p {
+            color: #764ba2;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .kpi-chart-container {
+            height: 400px;
+            margin-top: 30px;
+        }
+
+        .trend-analysis {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .trend-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .trend-chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+
+        .trend-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .trend-stats .stat-box {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .simulation-models {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .simulation-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            color: #4a154b;
+            font-weight: bold;
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .simulation-btn {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .simulation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .result-box {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result-box h4 {
+            color: #4a154b;
+            margin-bottom: 10px;
+        }
+
+        .result-box p {
+            color: #764ba2;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .simulation-chart-container,
+        .monte-carlo-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .simulation-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Add these styles to the existing stylesheet */
+        .business-objects-integration {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .bo-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .bo-report-btn {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .bo-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .bo-metric-card {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .bo-metric-card h3 {
+            color: #4a154b;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .bo-metric-card p {
+            color: #764ba2;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .bo-chart-container {
+            height: 400px;
+            margin-bottom: 30px;
+        }
+
+        .bo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .bo-table th,
+        .bo-table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+        }
+
+        .bo-table th {
+            background: #f8f9ff;
+            color: #4a154b;
+            font-weight: bold;
+        }
+
+        .bo-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .bo-action-btn {
+            background: #764ba2;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .bo-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .bo-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .bo-actions {
+                flex-direction: column;
+            }
+        }
+
+        .sap-bi-integration {
+            margin-top: 40px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .bi-dashboard {
+            margin-top: 20px;
+        }
+
+        .dashboard-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .dashboard-card {
+            flex: 1 1 48%;
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-content {
+            margin-top: 10px;
+        }
+
+        .export-options {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .export-btn {
+            background: #764ba2;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-clipboard-check"></i> نظام تقارير الجودة - عامر جروب للإلكترونيات</h1>
+        
+        <form id="qualityReport">
+            <div class="form-group">
+                <label for="reportNumber"><i class="fas fa-hashtag"></i> رقم التقرير:</label>
+                <input type="text" id="reportNumber" required>
+            </div>
+
+            <div class="form-group">
+                <label for="date"><i class="far fa-calendar-alt"></i> التاريخ:</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="product"><i class="fas fa-box"></i> المنتج:</label>
+                <input type="text" id="product" placeholder="ادخل اسم المنتج" required>
+            </div>
+
+            <div class="form-group">
+                <label for="qualityManager"><i class="fas fa-user-tie"></i> مسئول الجودة:</label>
+                <input type="text" id="qualityManager" required>
+            </div>
+
+            <div class="form-group">
+                <label for="generalDescription"><i class="fas fa-align-left"></i> وصف عام:</label>
+                <textarea id="generalDescription" required></textarea>
+            </div>
+
+            <div class="statistics">
+                <div class="form-group">
+                    <label for="producedUnits"><i class="fas fa-industry"></i> عدد الوحدات المنتجة:</label>
+                    <input type="number" id="producedUnits" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="inspectedUnits"><i class="fas fa-search"></i> عدد الوحدات المفحوصة:</label>
+                    <input type="number" id="inspectedUnits" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="conformingUnits"><i class="fas fa-check-circle"></i> عدد الوحدات المطابقة:</label>
+                    <input type="number" id="conformingUnits" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="nonconformingUnits"><i class="fas fa-times-circle"></i> عدد الوحدات غير المطابقة:</label>
+                    <input type="number" id="nonconformingUnits" readonly>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="defectType"><i class="fas fa-exclamation-triangle"></i> نوع العيب:</label>
+                <div class="select-wrapper">
+                    <select id="defectType" required>
+                        <option value="">اختر نوع العيب</option>
+                        <option value="soldering">عيوب اللحام</option>
+                        <option value="assembly">عيوب التجميع</option>
+                        <option value="components">عيوب المكونات</option>
+                        <option value="pcb">عيوب لوحة الدوائر المطبوعة</option>
+                        <option value="shortCircuit">دائرة قصر كهربائية</option>
+                        <option value="openCircuit">دائرة مفتوحة</option>
+                        <option value="powerSupply">مشاكل في مصدر الطاقة</option>
+                        <option value="signal">مشاكل في الإشارات الإلكترونية</option>
+                        <option value="software">عيوب برمجية</option>
+                        <option value="calibration">مشاكل في المعايرة</option>
+                        <option value="thermal">مشاكل حرارية</option>
+                        <option value="connectors">عيوب في الموصلات</option>
+                        <option value="housing">عيوب في الهيكل الخارجي</option>
+                        <option value="labeling">عيوب في الملصقات والعلامات</option>
+                        <option value="other">عيوب أخرى</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="defectDetails"><i class="fas fa-bug"></i> تفاصيل العيوب:</label>
+                <textarea id="defectDetails" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="actions"><i class="fas fa-tasks"></i> الإجراءات المتخذة:</label>
+                <textarea id="actions" required></textarea>
+            </div>
+
+            <button type="submit">
+                <i class="fas fa-save"></i>
+                حفظ التقرير
+            </button>
+        </form>
+
+        <div class="reports-section">
+            <h2><i class="fas fa-table"></i> التقارير المحفوظة</h2>
+            <div class="search-section">
+                <div class="search-form">
+                    <div class="search-group">
+                        <label for="searchField"><i class="fas fa-search"></i> بحث في التقارير:</label>
+                        <input type="text" id="searchField" placeholder="ابحث عن رقم التقرير، المنتج، أو مسئول الجودة...">
+                    </div>
+                    <div class="search-group">
+                        <label for="dateFrom"><i class="far fa-calendar-alt"></i> من تاريخ:</label>
+                        <input type="date" id="dateFrom">
+                    </div>
+                    <div class="search-group">
+                        <label for="dateTo"><i class="far fa-calendar-alt"></i> إلى تاريخ:</label>
+                        <input type="date" id="dateTo">
+                    </div>
+                </div>
+            </div>
+            <button class="table-toggle-btn" onclick="toggleTable()">
+                <i class="fas fa-table"></i> عرض/إخفاء التقارير
+            </button>
+            <div class="reports-table-container">
+                <div class="table-responsive">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>رقم التقرير</th>
+                                <th>التاريخ</th>
+                                <th>المنتج</th>
+                                <th>مسئول الجودة</th>
+                                <th>الوحدات المنتجة</th>
+                                <th>الوحدات المطابقة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            <!-- Table rows will be dynamically added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pareto-analysis">
+                <h2><i class="fas fa-chart-bar"></i> تحليل باريتو للعيوب</h2>
+                <div class="chart-container">
+                    <canvas id="paretoChart"></canvas>
+                </div>
+            </div>
+            <div class="control-charts">
+                <h2><i class="fas fa-chart-line"></i> مخططات التحكم الإحصائي</h2>
+                <div class="chart-selector">
+                    <select id="controlChartMetric">
+                        <option value="nonconforming">نسبة الوحدات غير المطابقة</option>
+                        <option value="defects">عدد العيوب</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="controlChart"></canvas>
+                </div>
+            </div>
+            <div class="distribution-analysis">
+                <h2><i class="fas fa-chart-area"></i> التحليل الإحصائي للبيانات</h2>
+                <div class="chart-selector">
+                    <select id="distributionMetric">
+                        <option value="nonconforming">نسبة الوحدات غير المطابقة</option>
+                        <option value="defects">عدد العيوب</option>
+                        <option value="conforming">نسبة الوحدات المطابقة</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+            <div class="regression-analysis">
+                <h2><i class="fas fa-chart-line"></i> تحليل الانحدار</h2>
+                <div class="regression-controls">
+                    <div class="select-group">
+                        <label for="xVariable">المتغير المستقل (X):</label>
+                        <select id="xVariable">
+                            <option value="producedUnits">عدد الوحدات المنتجة</option>
+                            <option value="inspectedUnits">عدد الوحدات المفحوصة</option>
+                            <option value="conformingUnits">عدد الوحدات المطابقة</option>
+                            <option value="nonconformingUnits">عدد الوحدات غير المطابقة</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label for="yVariable">المتغير التابع (Y):</label>
+                        <select id="yVariable">
+                            <option value="nonconformingUnits">عدد الوحدات غير المطابقة</option>
+                            <option value="producedUnits">عدد الوحدات المنتجة</option>
+                            <option value="inspectedUnits">عدد الوحدات المفحوصة</option>
+                            <option value="conformingUnits">عدد الوحدات المطابقة</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="regressionChart"></canvas>
+                </div>
+                <div class="regression-stats">
+                    <div class="stat-item">
+                        <h4>معادلة الانحدار:</h4>
+                        <p id="regressionEquation"></p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>معامل التحديد (R²):</h4>
+                        <p id="rSquared"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="variance-analysis">
+            <h2><i class="fas fa-chart-line"></i> تحليل الانحرافات</h2>
+            
+            <div class="variance-controls">
+                <div class="select-group">
+                    <label for="varianceMetric">اختر المقياس:</label>
+                    <select id="varianceMetric">
+                        <option value="nonconforming">نسبة الوحدات غير المطابقة</option>
+                        <option value="defects">عدد العيوب</option>
+                        <option value="production">معدل الإنتاج</option>
+                    </select>
+                </div>
+                <div class="select-group">
+                    <label for="standardValue">القيمة المعيارية:</label>
+                    <input type="number" id="standardValue" min="0" step="0.1">
+                </div>
+            </div>
+
+            <div class="variance-chart-container">
+                <canvas id="varianceChart"></canvas>
+            </div>
+
+            <div class="variance-stats">
+                <div class="stat-box">
+                    <h4>متوسط الانحراف</h4>
+                    <p id="meanDeviation">-</p>
+                </div>
+                <div class="stat-box">
+                    <h4>الانحراف المعياري</h4>
+                    <p id="standardDeviation">-</p>
+                </div>
+                <div class="stat-box">
+                    <h4>أقصى انحراف</h4>
+                    <p id="maxDeviation">-</p>
+                </div>
+                <div class="stat-box">
+                    <h4>أدنى انحراف</h4>
+                    <p id="minDeviation">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="root-cause-analysis">
+            <h2><i class="fas fa-sitemap"></i> تحليل السبب الجذري</h2>
+            
+            <!-- 5 Whys Tool -->
+            <div class="five-whys-tool">
+                <h3>أداة "5 لماذا"</h3>
+                <div class="whys-container">
+                    <div class="why-item">
+                        <label>المشكلة الأساسية:</label>
+                        <textarea id="problem" placeholder="صف المشكلة الأساسية هنا..."></textarea>
+                    </div>
+                    <div class="why-chain"></div>
+                    <button class="add-why-btn" onclick="addWhyLevel()">
+                        <i class="fas fa-plus"></i> إضافة "لماذا"
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fishbone Diagram -->
+            <div class="fishbone-diagram">
+                <h3>مخطط السبب والنتيجة (Ishikawa)</h3>
+                <div class="fishbone-controls">
+                    <select id="categorySelect">
+                        <option value="">اختر الفئة...</option>
+                        <option value="materials">المواد</option>
+                        <option value="machine">الآلات</option>
+                        <option value="man">العمالة</option>
+                        <option value="method">الطريقة</option>
+                        <option value="measurement">القياس</option>
+                        <option value="environment">البيئة</option>
+                    </select>
+                    <input type="text" id="causeInput" placeholder="أدخل السبب...">
+                    <button onclick="addCause()">إضافة سبب</button>
+                </div>
+                <div class="fishbone-canvas-container">
+                    <canvas id="fishboneCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="quality-checklist">
+            <h2><i class="fas fa-tasks"></i> قوائم الفحص</h2>
+            
+            <div class="checklist-controls">
+                <button class="add-checklist-btn" onclick="addNewChecklist()">
+                    <i class="fas fa-plus"></i> إضافة قائمة فحص جديدة
+                </button>
+            </div>
+
+            <div class="checklist-container">
+                <!-- Checklists will be added here dynamically -->
+            </div>
+        </div>
+
+        <div class="kpi-dashboard">
+            <h2><i class="fas fa-chart-line"></i> مؤشرات الأداء الرئيسية</h2>
+            
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>معدل العيوب</h3>
+                        <p id="defectRate">-</p>
+                    </div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>معدل الفشل</h3>
+                        <p id="failureRate">-</p>
+                    </div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>درجة الجودة</h3>
+                        <p id="qualityScore">-</p>
+                    </div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>تغطية الفحص</h3>
+                        <p id="inspectionCoverage">-</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="kpi-chart-container">
+                <canvas id="kpiTrendsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="trend-analysis">
+            <h2><i class="fas fa-chart-line"></i> تحليل الأنماط والتوجهات</h2>
+            
+            <div class="trend-controls">
+                <div class="select-group">
+                    <label for="trendMetric">اختر المقياس:</label>
+                    <select id="trendMetric" onchange="updateTrendAnalysis()">
+                        <option value="all">جميع المقاييس</option>
+                        <option value="defectRate">معدل العيوب</option>
+                        <option value="qualityScore">درجة الجودة</option>
+                        <option value="inspectionRate">معدل الفحص</option>
+                    </select>
+                </div>
+                <div class="select-group">
+                    <label for="trendPeriod">الفترة الزمنية:</label>
+                    <select id="trendPeriod" onchange="updateTrendAnalysis()">
+                        <option value="30">آخر 30 يوم</option>
+                        <option value="90">آخر 90 يوم</option>
+                        <option value="180">آخر 180 يوم</option>
+                        <option value="365">سنة كاملة</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="trend-chart-container">
+                <canvas id="trendAnalysisChart"></canvas>
+            </div>
+
+            <div class="trend-stats">
+                <div class="stat-box">
+                    <h4>اتجاه معدل العيوب</h4>
+                    <p id="defectTrend">-</p>
+                </div>
+                <div class="stat-box">
+                    <h4>اتجاه الجودة</h4>
+                    <p id="qualityTrend">-</p>
+                </div>
+                <div class="stat-box">
+                    <h4>اتجاه معدل الفحص</h4>
+                    <p id="inspectionTrend">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="simulation-models">
+            <h2><i class="fas fa-robot"></i> نماذج المحاكاة</h2>
+            
+            <div class="simulation-controls">
+                <div class="control-group">
+                    <label for="processType">نوع العملية:</label>
+                    <select id="processType">
+                        <option value="assembly">عملية التجميع</option>
+                        <option value="testing">عملية الفحص</option>
+                        <option value="packaging">عملية التغليف</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="defectRate">معدل العيوب المتوقع (%):</label>
+                    <input type="number" id="defectRate" min="0" max="100" step="0.1" value="5">
+                </div>
+                
+                <div class="control-group">
+                    <label for="batchSize">حجم الدفعة:</label>
+                    <input type="number" id="batchSize" min="1" max="1000" value="100">
+                </div>
+                
+                <div class="control-group">
+                    <label for="iterations">عدد التكرارات:</label>
+                    <input type="number" id="iterations" min="1" max="1000" value="100">
+                </div>
+                
+                <button onclick="runSimulation()" class="simulation-btn">
+                    <i class="fas fa-play"></i> تشغيل المحاكاة
+                </button>
+            </div>
+
+            <div class="simulation-results">
+                <div class="results-grid">
+                    <div class="result-box">
+                        <h4>متوسط عدد العيوب</h4>
+                        <p id="avgDefects">-</p>
+                    </div>
+                    <div class="result-box">
+                        <h4>الانحراف المعياري</h4>
+                        <p id="stdDeviation">-</p>
+                    </div>
+                    <div class="result-box">
+                        <h4>معدل الجودة المتوقع</h4>
+                        <p id="qualityRate">-</p>
+                    </div>
+                    <div class="result-box">
+                        <h4>مستوى الثقة</h4>
+                        <p id="confidenceLevel">-</p>
+                    </div>
+                </div>
+                
+                <div class="simulation-chart-container">
+                    <canvas id="simulationChart"></canvas>
+                </div>
+                
+                <div class="monte-carlo-container">
+                    <canvas id="monteCarloChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="sap-bi-integration">
+            <h2><i class="fas fa-database"></i> تكامل SAP Business Intelligence</h2>
+            
+            <div class="bi-dashboard">
+                <div class="dashboard-controls">
+                    <div class="control-group">
+                        <label for="reportType">نوع التقرير:</label>
+                        <select id="reportType">
+                            <option value="quality">تقرير الجودة الشامل</option>
+                            <option value="defects">تحليل العيوب</option>
+                            <option value="performance">مؤشرات الأداء</option>
+                            <option value="trends">تحليل الاتجاهات</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="dateRange">النطاق الزمني:</label>
+                        <select id="dateRange">
+                            <option value="day">اليوم</option>
+                            <option value="week">الأسبوع</option>
+                            <option value="month">الشهر</option>
+                            <option value="quarter">الربع</option>
+                            <option value="year">السنة</option>
+                        </select>
+                    </div>
+                    <button onclick="generateSAPReport()" class="sap-report-btn">
+                        <i class="fas fa-file-export"></i> إنشاء تقرير
+                    </button>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>ملخص الجودة</h3>
+                        <div id="sapQualitySummary" class="dashboard-content">
+                            <canvas id="sapQualityChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>تحليل الاتجاهات</h3>
+                        <div id="sapTrendAnalysis" class="dashboard-content">
+                            <canvas id="sapTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>مؤشرات الأداء الرئيسية</h3>
+                        <div id="sapKPIs" class="dashboard-content"></div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>التنبؤات المستقبلية</h3>
+                        <div id="sapPredictions" class="dashboard-content">
+                            <canvas id="sapPredictionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="export-options">
+                    <button onclick="exportToExcel()" class="export-btn">
+                        <i class="fas fa-file-excel"></i> تصدير إلى Excel
+                    </button>
+                    <button onclick="exportToPDF()" class="export-btn">
+                        <i class="fas fa-file-pdf"></i> تصدير إلى PDF
+                    </button>
+                    <button onclick="scheduleReport()" class="export-btn">
+                        <i class="fas fa-clock"></i> جدولة التقارير
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="business-objects-integration">
+            <h2><i class="fas fa-chart-pie"></i> تكامل SAP BusinessObjects</h2>
+            
+            <div class="bo-dashboard">
+                <div class="bo-controls">
+                    <div class="control-group">
+                        <label for="boReportType">نوع التقرير:</label>
+                        <select id="boReportType">
+                            <option value="detailed">تقرير تفصيلي</option>
+                            <option value="summary">تقرير ملخص</option>
+                            <option value="analytics">تقرير تحليلي</option>
+                            <option value="custom">تقرير مخصص</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="boDateRange">النطاق الزمني:</label>
+                        <select id="boDateRange">
+                            <option value="day">اليوم</option>
+                            <option value="week">الأسبوع</option>
+                            <option value="month">الشهر</option>
+                            <option value="quarter">الربع</option>
+                            <option value="year">السنة</option>
+                        </select>
+                    </div>
+                    <button onclick="generateBusinessObjectsReport()" class="bo-report-btn">
+                        <i class="fas fa-file-alt"></i> إنشاء تقرير BusinessObjects
+                    </button>
+                </div>
+
+                <div class="bo-metrics-grid">
+                    <div class="bo-metric-card">
+                        <h3>إجمالي التقارير</h3>
+                        <p id="boTotalReports">0</p>
+                    </div>
+                    <div class="bo-metric-card">
+                        <h3>معدل العيوب</h3>
+                        <p id="boDefectRate">0%</p>
+                    </div>
+                    <div class="bo-metric-card">
+                        <h3>درجة الجودة</h3>
+                        <p id="boQualityScore">0%</p>
+                    </div>
+                    <div class="bo-metric-card">
+                        <h3>الاتجاه العام</h3>
+                        <p id="boTrend">-</p>
+                    </div>
+                </div>
+
+                <div class="bo-analytics">
+                    <div class="bo-chart-container">
+                        <canvas id="boAnalyticsChart"></canvas>
+                    </div>
+                    
+                    <div class="bo-table-container">
+                        <h3>آخر التقارير</h3>
+                        <table class="bo-table">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>المنتج</th>
+                                    <th>مسؤول الجودة</th>
+                                    <th>معدل العيوب</th>
+                                    <th>درجة الجودة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="boReportTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bo-actions">
+                    <button onclick="exportBusinessObjectsReport('pdf')" class="bo-action-btn">
+                        <i class="fas fa-file-pdf"></i> تصدير PDF
+                    </button>
+                    <button onclick="exportBusinessObjectsReport('excel')" class="bo-action-btn">
+                        <i class="fas fa-file-excel"></i> تصدير Excel
+                    </button>
+                    <button onclick="scheduleBusinessObjectsReport()" class="bo-action-btn">
+                        <i class="fas fa-clock"></i> جدولة التقارير
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize reports from localStorage or empty array if none exists
+        let reports = JSON.parse(localStorage.getItem('qualityReports')) || [];
+        let checklists = JSON.parse(localStorage.getItem('qualityChecklists')) || [];
+
+        // Function to save reports to localStorage
+        function saveReportsToStorage() {
+            localStorage.setItem('qualityReports', JSON.stringify(reports));
+        }
+
+        function addNewChecklist() {
+            const checklistTitle = prompt('أدخل عنوان قائمة الفحص:');
+            if (!checklistTitle) return;
+
+            const newChecklist = {
+                id: Date.now(),
+                title: checklistTitle,
+                steps: [],
+                createdAt: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            checklists.push(newChecklist);
+            saveChecklistsToStorage();
+            renderChecklists();
+        }
+
+        function saveChecklistsToStorage() {
+            localStorage.setItem('qualityChecklists', JSON.stringify(checklists));
+        }
+
+        function renderChecklists() {
+            const container = document.querySelector('.checklist-container');
+            container.innerHTML = '';
+
+            checklists.forEach(checklist => {
+                const checklistElement = document.createElement('div');
+                checklistElement.className = 'checklist-item';
+                checklistElement.innerHTML = `
+                    <div class="checklist-header">
+                        <div class="checklist-title">${checklist.title}</div>
+                        <div class="checklist-actions">
+                            <button onclick="addStep(${checklist.id})" class="add-step-btn">
+                                <i class="fas fa-plus"></i> إضافة خطوة
+                            </button>
+                            <button onclick="deleteChecklist(${checklist.id})" class="delete-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="checklist-steps">
+                        ${renderSteps(checklist.steps)}
+                    </div>
+                    <div class="add-step-form">
+                        <input type="text" class="add-step-input" id="stepInput-${checklist.id}" placeholder="أدخل خطوة جديدة...">
+                        <button onclick="submitStep(${checklist.id})" class="add-step-btn">إضافة</button>
+                    </div>
+                `;
+                container.appendChild(checklistElement);
+            });
+        }
+
+        function renderSteps(steps) {
+            return steps.map(step => `
+                <div class="step-item">
+                    <input type="checkbox" class="step-checkbox" 
+                           ${step.completed ? 'checked' : ''} 
+                           onchange="toggleStep(${step.id})">
+                    <span class="step-text">${step.text}</span>
+                    <span class="step-status ${getStatusClass(step.status)}">
+                        ${getStatusText(step.status)}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function getStatusClass(status) {
+            return {
+                'pending': 'status-pending',
+                'completed': 'status-completed',
+                'failed': 'status-failed'
+            }[status] || 'status-pending';
+        }
+
+        function getStatusText(status) {
+            return {
+                'pending': 'قيد التنفيذ',
+                'completed': 'مكتمل',
+                'failed': 'فشل'
+            }[status] || 'قيد التنفيذ';
+        }
+
+        function addStep(checklistId) {
+            const checklist = checklists.find(c => c.id === checklistId);
+            if (!checklist) return;
+
+            const stepText = document.getElementById(`stepInput-${checklistId}`).value.trim();
+            if (!stepText) return;
+
+            checklist.steps.push({
+                id: Date.now(),
+                text: stepText,
+                completed: false,
+                status: 'pending'
+            });
+
+            saveChecklistsToStorage();
+            renderChecklists();
+        }
+
+        function submitStep(checklistId) {
+            const input = document.getElementById(`stepInput-${checklistId}`);
+            if (input.value.trim()) {
+                addStep(checklistId);
+                input.value = '';
+            }
+        }
+
+        function toggleStep(stepId) {
+            checklists.forEach(checklist => {
+                const step = checklist.steps.find(s => s.id === stepId);
+                if (step) {
+                    step.completed = !step.completed;
+                    step.status = step.completed ? 'completed' : 'pending';
+                }
+            });
+
+            saveChecklistsToStorage();
+            renderChecklists();
+        }
+
+        function deleteChecklist(checklistId) {
+            if (confirm('هل أنت متأكد من حذف قائمة الفحص هذه؟')) {
+                checklists = checklists.filter(c => c.id !== checklistId);
+                saveChecklistsToStorage();
+                renderChecklists();
+            }
+        }
+
+        document.getElementById('qualityReport').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const inspectedUnits = parseInt(document.getElementById('inspectedUnits').value);
+            const conformingUnits = parseInt(document.getElementById('conformingUnits').value);
+            const nonconformingUnits = parseInt(document.getElementById('nonconformingUnits').value);
+
+            const formData = {
+                id: Date.now(),
+                reportNumber: document.getElementById('reportNumber').value,
+                date: document.getElementById('date').value,
+                product: document.getElementById('product').value,
+                qualityManager: document.getElementById('qualityManager').value,
+                generalDescription: document.getElementById('generalDescription').value,
+                producedUnits: document.getElementById('producedUnits').value,
+                inspectedUnits: inspectedUnits,
+                conformingUnits: conformingUnits,
+                nonconformingUnits: nonconformingUnits,
+                defectType: document.getElementById('defectType').value,
+                defectDetails: document.getElementById('defectDetails').value,
+                actions: document.getElementById('actions').value
+            };
+
+            reports.push(formData);
+            saveReportsToStorage(); // Save to localStorage
+            updateTable();
+            updateRegressionAnalysis(); // Update regression analysis when new data is added
+            
+            alert('تم حفظ التقرير بنجاح!');
+            this.reset();
+        });
+
+        document.getElementById('inspectedUnits').addEventListener('input', calculateNonConforming);
+        document.getElementById('conformingUnits').addEventListener('input', calculateNonConforming);
+
+        function calculateNonConforming() {
+            const inspectedUnits = parseInt(document.getElementById('inspectedUnits').value) || 0;
+            const conformingUnits = parseInt(document.getElementById('conformingUnits').value) || 0;
+            
+            // Calculate non-conforming units
+            const nonconformingUnits = inspectedUnits - conformingUnits;
+            
+            // Set the calculated value
+            document.getElementById('nonconformingUnits').value = nonconformingUnits >= 0 ? nonconformingUnits : 0;
+            
+            // Validate that conforming units don't exceed inspected units
+            if (conformingUnits > inspectedUnits) {
+                alert('عدد الوحدات المطابقة لا يمكن أن يتجاوز عدد الوحدات المفحوصة');
+                document.getElementById('conformingUnits').value = inspectedUnits;
+                document.getElementById('nonconformingUnits').value = 0;
+            }
+        }
+
+        function deleteReport(id) {
+            if (confirm('هل أنت متأكد من حذف هذا التقرير؟')) {
+                reports = reports.filter(report => report.id !== id);
+                saveReportsToStorage(); // Save to localStorage after deletion
+                updateTable();
+                updateRegressionAnalysis(); // Update regression analysis after deletion
+            }
+        }
+
+        function editReport(id) {
+            const report = reports.find(r => r.id === id);
+            if (report) {
+                document.getElementById('reportNumber').value = report.reportNumber;
+                document.getElementById('date').value = report.date;
+                document.getElementById('product').value = report.product;
+                document.getElementById('qualityManager').value = report.qualityManager;
+                document.getElementById('generalDescription').value = report.generalDescription;
+                document.getElementById('producedUnits').value = report.producedUnits;
+                document.getElementById('inspectedUnits').value = report.inspectedUnits;
+                document.getElementById('conformingUnits').value = report.conformingUnits;
+                document.getElementById('nonconformingUnits').value = report.nonconformingUnits;
+                document.getElementById('defectType').value = report.defectType;
+                document.getElementById('defectDetails').value = report.defectDetails;
+                document.getElementById('actions').value = report.actions;
+                
+                reports = reports.filter(r => r.id !== id);
+                saveReportsToStorage(); // Save to localStorage after removing the report
+                updateTable();
+                updateRegressionAnalysis(); // Update regression analysis after edit
+                
+                document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Load and display reports when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTable(); // Display existing reports
+            renderChecklists(); // Initialize checklists
+            document.getElementById('searchField').addEventListener('input', searchReports);
+            document.getElementById('dateFrom').addEventListener('change', searchReports);
+            document.getElementById('dateTo').addEventListener('change', searchReports);
+            updateParetoChart();
+            updateControlChart();
+            updateDistributionChart(); // Initialize distribution chart
+            document.getElementById('distributionMetric').addEventListener('change', updateDistributionChart);
+            drawFishbone(); // Initialize fishbone diagram
+            document.getElementById('xVariable').addEventListener('change', updateRegressionAnalysis);
+            document.getElementById('yVariable').addEventListener('change', updateRegressionAnalysis);
+            updateRegressionAnalysis(); // Initial update
+            
+            // Add event listeners for variance analysis
+            document.getElementById('varianceMetric').addEventListener('change', updateVarianceAnalysis);
+            document.getElementById('standardValue').addEventListener('change', updateVarianceAnalysis);
+            
+            // Initialize variance analysis
+            updateVarianceAnalysis();
+            updateKPIs(); // Initialize KPIs
+            
+            // Initialize trend analysis
+            updateTrendAnalysis();
+            document.getElementById('trendMetric').addEventListener('change', updateTrendAnalysis);
+            document.getElementById('trendPeriod').addEventListener('change', updateTrendAnalysis);
+        });
+
+        function updateRegressionAnalysis() {
+            const xVariable = document.getElementById('xVariable').value;
+            const yVariable = document.getElementById('yVariable').value;
+
+            // Get data points for regression
+            const dataPoints = reports.map(report => [
+                parseFloat(report[xVariable]),
+                parseFloat(report[yVariable])
+            ]).filter(point => !isNaN(point[0]) && !isNaN(point[1]));
+
+            if (dataPoints.length < 2) {
+                console.log('Not enough data points for regression analysis');
+                return;
+            }
+
+            // Perform linear regression
+            const result = regression.linear(dataPoints);
+            
+            // Update regression equation display
+            document.getElementById('regressionEquation').textContent = 
+                `y = ${result.equation[0].toFixed(4)}x + ${result.equation[1].toFixed(4)}`;
+            
+            // Update R-squared value
+            document.getElementById('rSquared').textContent = 
+                `${(result.r2 * 100).toFixed(2)}%`;
+
+            // Create scatter plot with regression line
+            const canvas = document.getElementById('regressionChart');
+            
+            // Destroy existing chart if it exists
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            // Get points for regression line
+            const minX = Math.min(...dataPoints.map(p => p[0]));
+            const maxX = Math.max(...dataPoints.map(p => p[0]));
+            const regressionPoints = [
+                [minX, result.predict(minX)[1]],
+                [maxX, result.predict(maxX)[1]]
+            ];
+
+            // Create new chart
+            canvas.chart = new Chart(canvas, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'البيانات الفعلية',
+                            data: dataPoints.map(point => ({x: point[0], y: point[1]})),
+                            backgroundColor: '#764ba2',
+                            pointRadius: 5
+                        },
+                        {
+                            label: 'خط الانحدار',
+                            data: regressionPoints.map(point => ({x: point[0], y: point[1]})),
+                            type: 'line',
+                            borderColor: '#667eea',
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: getVariableLabel(xVariable)
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: getVariableLabel(yVariable)
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'تحليل الانحدار',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper function to get variable labels
+        function getVariableLabel(variable) {
+            const labels = {
+                'producedUnits': 'عدد الوحدات المنتجة',
+                'inspectedUnits': 'عدد الوحدات المفحوصة',
+                'conformingUnits': 'عدد الوحدات المطابقة',
+                'nonconformingUnits': 'عدد الوحدات غير المطابقة'
+            };
+            return labels[variable] || variable;
+        }
+
+        function updateKPIs() {
+            // Calculate KPIs from reports data
+            const kpis = calculateKPIs();
+            
+            // Update KPI displays
+            document.getElementById('defectRate').textContent = kpis.defectRate.toFixed(2) + '%';
+            document.getElementById('failureRate').textContent = kpis.failureRate.toFixed(2) + '%';
+            document.getElementById('qualityScore').textContent = kpis.qualityScore.toFixed(2) + '%';
+            document.getElementById('inspectionCoverage').textContent = kpis.inspectionCoverage.toFixed(2) + '%';
+            
+            // Update KPI trends chart
+            updateKPITrendsChart();
+        }
+
+        function calculateKPIs() {
+            const recentReports = [...reports].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 30);
+            
+            let totalDefects = 0;
+            let totalProduced = 0;
+            let totalInspected = 0;
+            let totalConforming = 0;
+
+            recentReports.forEach(report => {
+                totalDefects += parseInt(report.nonconformingUnits);
+                totalProduced += parseInt(report.producedUnits);
+                totalInspected += parseInt(report.inspectedUnits);
+                totalConforming += parseInt(report.conformingUnits);
+            });
+
+            return {
+                defectRate: (totalDefects / totalProduced) * 100,
+                failureRate: (totalDefects / totalInspected) * 100,
+                qualityScore: (totalConforming / totalInspected) * 100,
+                inspectionCoverage: (totalInspected / totalProduced) * 100
+            };
+        }
+
+        function updateKPITrendsChart() {
+            const canvas = document.getElementById('kpiTrendsChart');
+            
+            // Get last 12 reports sorted by date
+            const recentReports = [...reports]
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(-12);
+                
+            const kpiData = recentReports.map(report => ({
+                date: moment(report.date).format('YYYY-MM-DD'),
+                defectRate: (parseInt(report.nonconformingUnits) / parseInt(report.producedUnits)) * 100,
+                failureRate: (parseInt(report.nonconformingUnits) / parseInt(report.inspectedUnits)) * 100,
+                qualityScore: (parseInt(report.conformingUnits) / parseInt(report.inspectedUnits)) * 100
+            }));
+
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            canvas.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: kpiData.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'معدل العيوب',
+                            data: kpiData.map(d => d.defectRate),
+                            borderColor: '#764ba2',
+                            fill: false
+                        },
+                        {
+                            label: 'معدل الفشل',
+                            data: kpiData.map(d => d.failureRate),
+                            borderColor: '#ff4b4b',
+                            fill: false
+                        },
+                        {
+                            label: 'درجة الجودة',
+                            data: kpiData.map(d => d.qualityScore),
+                            borderColor: '#667eea',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'YYYY-MM-DD'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'التاريخ'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'النسبة المئوية %'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'اتجاهات مؤشرات الأداء الرئيسية',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('reportsTableBody');
+            tbody.innerHTML = '';
+            
+            reports.forEach(report => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.reportNumber}</td>
+                    <td>${report.date}</td>
+                    <td>${report.product}</td>
+                    <td>${report.qualityManager}</td>
+                    <td>${report.producedUnits}</td>
+                    <td>${report.conformingUnits}</td>
+                    <td class="action-buttons">
+                        <button class="edit-btn" onclick="editReport(${report.id})">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
+                        <button class="delete-btn" onclick="deleteReport(${report.id})">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updateParetoChart();
+            updateControlChart();
+            updateDistributionChart(); // Update distribution chart
+            updateRegressionAnalysis(); // Update regression analysis with new data
+            updateVarianceAnalysis(); // Update variance analysis with new data
+            updateTrendAnalysis(); // Add this line to update trend analysis when table updates
+            updateKPIs(); // Add this line to update KPIs when table updates
+        }
+
+        function searchReports() {
+            const searchTerm = document.getElementById('searchField').value.toLowerCase();
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            
+            // Show table container if there's any search criteria
+            const tableContainer = document.querySelector('.reports-table-container');
+            if (searchTerm || dateFrom || dateTo) {
+                tableContainer.classList.add('show');
+            } else {
+                tableContainer.classList.remove('show');
+                return; // Don't filter if no search criteria
+            }
+            
+            const filteredReports = reports.filter(report => {
+                const matchesSearch = (
+                    report.reportNumber.toLowerCase().includes(searchTerm) ||
+                    report.product.toLowerCase().includes(searchTerm) ||
+                    report.qualityManager.toLowerCase().includes(searchTerm)
+                );
+                
+                let matchesDate = true;
+                if (dateFrom && dateTo) {
+                    const reportDate = new Date(report.date);
+                    const fromDate = new Date(dateFrom);
+                    const toDate = new Date(dateTo);
+                    matchesDate = reportDate >= fromDate && reportDate <= toDate;
+                }
+                
+                return matchesSearch && matchesDate;
+            });
+            
+            const tbody = document.getElementById('reportsTableBody');
+            tbody.innerHTML = '';
+            
+            if (filteredReports.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center;">لا توجد نتائج للبحث</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            filteredReports.forEach(report => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.reportNumber}</td>
+                    <td>${report.date}</td>
+                    <td>${report.product}</td>
+                    <td>${report.qualityManager}</td>
+                    <td>${report.producedUnits}</td>
+                    <td>${report.conformingUnits}</td>
+                    <td class="action-buttons">
+                        <button class="edit-btn" onclick="editReport(${report.id})">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
+                        <button class="delete-btn" onclick="deleteReport(${report.id})">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function toggleTable() {
+            const tableContainer = document.querySelector('.reports-table-container');
+            tableContainer.classList.toggle('show');
+        }
+
+        function updateParetoChart() {
+            const defectCounts = {};
+            
+            // Count defects by type
+            reports.forEach(report => {
+                if (report.defectType) {
+                    defectCounts[report.defectType] = (defectCounts[report.defectType] || 0) + parseInt(report.nonconformingUnits);
+                }
+            });
+
+            // Convert to array and sort by count
+            const defectArray = Object.entries(defectCounts).map(([type, count]) => ({
+                type: getDefectTypeLabel(type),
+                count: count
+            }));
+            
+            defectArray.sort((a, b) => b.count - a.count);
+
+            // Calculate cumulative percentages
+            const total = defectArray.reduce((sum, item) => sum + item.count, 0);
+            let cumulative = 0;
+            const paretoData = defectArray.map(item => {
+                cumulative += item.count;
+                return {
+                    ...item,
+                    percentage: (cumulative / total) * 100
+                };
+            });
+
+            // Prepare chart data
+            const labels = paretoData.map(item => item.type);
+            const defectData = paretoData.map(item => item.count);
+            const cumulativeData = paretoData.map(item => item.percentage);
+
+            // Get the canvas element
+            const canvas = document.getElementById('paretoChart');
+            const ctx = canvas.getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            // Create new chart and store reference on canvas element
+            canvas.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'عدد العيوب',
+                            data: defectData,
+                            backgroundColor: '#764ba2',
+                            order: 2
+                        },
+                        {
+                            label: 'النسبة التراكمية',
+                            data: cumulativeData,
+                            type: 'line',
+                            borderColor: '#667eea',
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: 'percentage',
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'عدد العيوب'
+                            }
+                        },
+                        percentage: {
+                            position: 'right',
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'النسبة التراكمية %'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'مخطط باريتو للعيوب',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateControlChart() {
+            const metric = document.getElementById('controlChartMetric').value;
+            
+            // Get last 20 reports, sorted by date
+            const recentReports = [...reports]
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(-20);
+            
+            let data, upperControl, lowerControl, centerLine;
+
+            if (metric === 'nonconforming') {
+                data = recentReports.map(report => ({
+                    x: moment(report.date).format('YYYY-MM-DD'),
+                    y: (report.nonconformingUnits / report.inspectedUnits) * 100
+                }));
+                
+                // Calculate control limits
+                const values = data.map(d => d.y);
+                const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                const stdDev = Math.sqrt(values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length);
+                
+                centerLine = mean;
+                upperControl = mean + (3 * stdDev);
+                lowerControl = mean - (3 * stdDev);
+            } else {
+                data = recentReports.map(report => ({
+                    x: moment(report.date).format('YYYY-MM-DD'),
+                    y: parseInt(report.nonconformingUnits)
+                }));
+                
+                const values = data.map(d => d.y);
+                const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                const stdDev = Math.sqrt(values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length);
+                
+                centerLine = mean;
+                upperControl = mean + (3 * stdDev);
+                lowerControl = Math.max(0, mean - (3 * stdDev));
+            }
+
+            const canvas = document.getElementById('controlChart');
+            
+            // Destroy existing chart if it exists
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            // Create new control chart
+            canvas.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            label: metric === 'nonconforming' ? 'نسبة الوحدات غير المطابقة %' : 'عدد العيوب',
+                            data: data,
+                            borderColor: '#764ba2',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#764ba2',
+                            fill: false
+                        },
+                        {
+                            label: 'الحد الأعلى للتحكم',
+                            data: data.map(d => ({ x: d.x, y: upperControl })),
+                            borderColor: '#ff4b4b',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'خط المركز',
+                            data: data.map(d => ({ x: d.x, y: centerLine })),
+                            borderColor: '#667eea',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            borderDash: [2, 2]
+                        },
+                        {
+                            label: 'الحد الأدنى للتحكم',
+                            data: data.map(d => ({ x: d.x, y: lowerControl })),
+                            borderColor: '#ff4b4b',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'YYYY-MM-DD'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'التاريخ'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: metric === 'nonconforming' ? 'النسبة المئوية %' : 'العدد'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'مخطط التحكم الإحصائي للجودة',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.y.toFixed(2);
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDistributionChart() {
+            const metric = document.getElementById('distributionMetric').value;
+            
+            // Get data based on selected metric
+            let data = reports.map(report => {
+                switch(metric) {
+                    case 'nonconforming':
+                        return (report.nonconformingUnits / report.inspectedUnits) * 100;
+                    case 'defects':
+                        return parseInt(report.nonconformingUnits);
+                    case 'conforming':
+                        return (report.conformingUnits / report.inspectedUnits) * 100;
+                }
+            });
+
+            // Calculate mean and standard deviation
+            const mean = data.reduce((a, b) => a + b, 0) / data.length;
+            const stdDev = Math.sqrt(data.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / data.length);
+
+            // Create histogram bins
+            const binCount = Math.ceil(Math.sqrt(data.length)); // Square root rule for bin count
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const binWidth = (max - min) / binCount;
+            
+            const bins = Array(binCount).fill(0);
+            const binLabels = [];
+            
+            // Fill bins
+            data.forEach(value => {
+                const binIndex = Math.min(Math.floor((value - min) / binWidth), binCount - 1);
+                bins[binIndex]++;
+            });
+
+            // Generate bin labels
+            for (let i = 0; i < binCount; i++) {
+                const start = (min + (i * binWidth)).toFixed(2);
+                const end = (min + ((i + 1) * binWidth)).toFixed(2);
+                binLabels.push(`${start}-${end}`);
+            }
+
+            // Generate normal distribution curve points
+            const curvePoints = [];
+            for (let i = 0; i <= 100; i++) {
+                const x = min + (i / 100) * (max - min);
+                const y = (1 / (stdDev * Math.sqrt(2 * Math.PI))) * 
+                        Math.exp(-0.5 * Math.pow((x - mean) / stdDev, 2)) * 
+                        data.length * binWidth; // Scale to match histogram height
+                curvePoints.push({x, y});
+            }
+
+            const canvas = document.getElementById('distributionChart');
+            
+            // Destroy existing chart if it exists
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            // Create new chart
+            canvas.chart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: binLabels,
+                    datasets: [
+                        {
+                            label: 'التوزيع التكراري',
+                            data: bins,
+                            backgroundColor: 'rgba(118, 75, 162, 0.5)',
+                            borderColor: '#764ba2',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'منحنى التوزيع الطبيعي',
+                            data: curvePoints,
+                            type: 'line',
+                            borderColor: '#667eea',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: getMetricLabel(metric)
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'التكرار'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'التحليل الإحصائي للبيانات',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== undefined) {
+                                        label += context.parsed.y.toFixed(2);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper function to get metric labels
+        function getMetricLabel(metric) {
+            const labels = {
+                'nonconforming': 'نسبة الوحدات غير المطابقة %',
+                'defects': 'عدد العيوب',
+                'conforming': 'نسبة الوحدات المطابقة %'
+            };
+            return labels[metric] || metric;
+        }
+
+        // Helper function to get Arabic labels for defect types
+        function getDefectTypeLabel(type) {
+            const defectTypes = {
+                'soldering': 'عيوب اللحام',
+                'assembly': 'عيوب التجميع',
+                'components': 'عيوب المكونات',
+                'pcb': 'عيوب لوحة الدوائر',
+                'shortCircuit': 'دائرة قصر',
+                'openCircuit': 'دائرة مفتوحة',
+                'powerSupply': 'مشاكل الطاقة',
+                'signal': 'مشاكل الإشارات',
+                'software': 'عيوب برمجية',
+                'calibration': 'مشاكل المعايرة',
+                'thermal': 'مشاكل حرارية',
+                'connectors': 'عيوب الموصلات',
+                'housing': 'عيوب الهيكل',
+                'labeling': 'عيوب الملصقات',
+                'other': 'عيوب أخرى'
+            };
+            return defectTypes[type] || type;
+        }
+
+        // 5 Whys functionality
+        let whyCount = 0;
+        const MAX_WHYS = 5;
+
+        function addWhyLevel() {
+            if (whyCount >= MAX_WHYS) {
+                alert('لقد وصلت إلى الحد الأقصى من الأسئلة');
+                return;
+            }
+            
+            const whyChain = document.querySelector('.why-chain');
+            const whyItem = document.createElement('div');
+            whyItem.className = 'why-item';
+            whyItem.innerHTML = `
+                <textarea placeholder="لماذا حدث هذا؟" data-level="${whyCount + 1}"></textarea>
+            `;
+            
+            whyChain.appendChild(whyItem);
+            whyCount++;
+        }
+
+        // Fishbone Diagram functionality
+        let fishboneData = {
+            materials: [],
+            machine: [],
+            man: [],
+            method: [],
+            measurement: [],
+            environment: []
+        };
+
+        function addCause() {
+            const category = document.getElementById('categorySelect').value;
+            const cause = document.getElementById('causeInput').value;
+            
+            if (!category || !cause) {
+                alert('الرجاء اختيار الفئة وإدخال السبب');
+                return;
+            }
+            
+            fishboneData[category].push(cause);
+            drawFishbone();
+            document.getElementById('causeInput').value = '';
+        }
+
+        function drawFishbone() {
+            const canvas = document.getElementById('fishboneCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Set canvas size
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+            
+            // Draw main spine
+            ctx.beginPath();
+            ctx.moveTo(50, canvas.height / 2);
+            ctx.lineTo(canvas.width - 50, canvas.height / 2);
+            ctx.strokeStyle = '#764ba2';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw categories and causes
+            const categories = Object.keys(fishboneData);
+            const spineLength = canvas.width - 100;
+            const spacing = spineLength / (categories.length + 1);
+            
+            categories.forEach((category, index) => {
+                const x = 50 + spacing * (index + 1);
+                const y = canvas.height / 2;
+                
+                // Draw category branch
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y - 100);
+                ctx.strokeStyle = '#667eea';
+                ctx.stroke();
+                
+                // Draw category name
+                ctx.save();
+                ctx.translate(x, y - 110);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillStyle = '#4a154b';
+                ctx.font = '14px Cairo';
+                ctx.fillText(getCategoryLabel(category), 0, 0);
+                ctx.restore();
+                
+                // Draw causes
+                fishboneData[category].forEach((cause, causeIndex) => {
+                    const causeY = y - 90 + (causeIndex * 20);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x, causeY);
+                    ctx.lineTo(x + 30, causeY);
+                    ctx.strokeStyle = '#667eea';
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#4a154b';
+                    ctx.font = '12px Cairo';
+                    ctx.fillText(cause, x + 35, causeY + 4);
+                });
+            });
+        }
+
+        function getCategoryLabel(category) {
+            const labels = {
+                materials: 'المواد',
+                machine: 'الآلات',
+                man: 'العمالة',
+                method: 'الطريقة',
+                measurement: 'القياس',
+                environment: 'البيئة'
+            };
+            return labels[category] || category;
+        }
+
+        // Add resize listener for fishbone diagram
+        window.addEventListener('resize', drawFishbone);
+
+        // Initialize fishbone diagram
+        document.addEventListener('DOMContentLoaded', () => {
+            drawFishbone();
+        });
+
+        function updateTrendAnalysis() {
+            // Get the chart canvas
+            const canvas = document.getElementById('trendAnalysisChart');
+
+            // Sort reports by date
+            const sortedReports = [...reports].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Calculate various metrics over time
+            const trendData = sortedReports.map(report => ({
+                date: moment(report.date).format('YYYY-MM-DD'),
+                defectRate: (report.nonconformingUnits / report.producedUnits) * 100,
+                qualityScore: (report.conformingUnits / report.inspectedUnits) * 100,
+                inspectionRate: (report.inspectedUnits / report.producedUnits) * 100
+            }));
+
+            // Calculate moving averages (7-day window)
+            const movingAverages = calculateMovingAverages(trendData, 7);
+
+            // Destroy existing chart if it exists
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            // Create new trend analysis chart
+            canvas.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: trendData.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'معدل العيوب',
+                            data: trendData.map(d => d.defectRate),
+                            borderColor: '#764ba2',
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'المتوسط المتحرك لمعدل العيوب',
+                            data: movingAverages.defectRate,
+                            borderColor: '#ff4b4b',
+                            borderDash: [5, 5],
+                            fill: false
+                        },
+                        {
+                            label: 'درجة الجودة',
+                            data: trendData.map(d => d.qualityScore),
+                            borderColor: '#667eea',
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'معدل الفحص',
+                            data: trendData.map(d => d.inspectionRate),
+                            borderColor: '#38b2ac',
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            title: {
+                                display: true,
+                                text: 'التاريخ'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'النسبة المئوية %'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'تحليل الأنماط والتوجهات',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper function to calculate moving averages
+        function calculateMovingAverages(data, window) {
+            const movingAverages = {
+                defectRate: [],
+                qualityScore: [],
+                inspectionRate: []
+            };
+
+            for (let i = 0; i < data.length; i++) {
+                const slice = data.slice(Math.max(0, i - window + 1), i + 1);
+                movingAverages.defectRate.push(
+                    slice.reduce((sum, d) => sum + d.defectRate, 0) / slice.length
+                );
+                movingAverages.qualityScore.push(
+                    slice.reduce((sum, d) => sum + d.qualityScore, 0) / slice.length
+                );
+                movingAverages.inspectionRate.push(
+                    slice.reduce((sum, d) => sum + d.inspectionRate, 0) / slice.length
+                );
+            }
+
+            return movingAverages;
+        }
+
+        // Function for variance analysis
+        function updateVarianceAnalysis() {
+            const metric = document.getElementById('varianceMetric').value;
+            const standardValue = parseFloat(document.getElementById('standardValue').value) || 0;
+
+            // Get the data based on selected metric
+            const varianceData = reports.map(report => {
+                let actualValue;
+                switch(metric) {
+                    case 'nonconforming':
+                        actualValue = (report.nonconformingUnits / report.producedUnits) * 100;
+                        break;
+                    case 'defects':
+                        actualValue = parseInt(report.nonconformingUnits);
+                        break;
+                    case 'production':
+                        actualValue = parseInt(report.producedUnits);
+                        break;
+                    default:
+                        actualValue = 0;
+                }
+                return {
+                    date: moment(report.date).format('YYYY-MM-DD'),
+                    actual: actualValue,
+                    variance: actualValue - standardValue
+                };
+            });
+
+            // Calculate statistics
+            const variances = varianceData.map(d => d.variance);
+            const meanDeviation = variances.reduce((a, b) => a + b, 0) / variances.length;
+            const standardDeviation = Math.sqrt(
+                variances.reduce((a, b) => a + Math.pow(b - meanDeviation, 2), 0) / variances.length
+            );
+            const maxDeviation = Math.max(...variances);
+            const minDeviation = Math.min(...variances);
+
+            // Update statistics display
+            document.getElementById('meanDeviation').textContent = meanDeviation.toFixed(2);
+            document.getElementById('standardDeviation').textContent = standardDeviation.toFixed(2);
+            document.getElementById('maxDeviation').textContent = maxDeviation.toFixed(2);
+            document.getElementById('minDeviation').textContent = minDeviation.toFixed(2);
+
+            // Get the canvas and create chart
+            const canvas = document.getElementById('varianceChart');
+
+            // Destroy existing chart if it exists
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            // Create new chart
+            canvas.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: varianceData.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'القيمة الفعلية',
+                            data: varianceData.map(d => d.actual),
+                            borderColor: '#764ba2',
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'القيمة المعيارية',
+                            data: varianceData.map(() => standardValue),
+                            borderColor: '#667eea',
+                            borderDash: [5, 5],
+                            fill: false
+                        },
+                        {
+                            label: 'الانحراف',
+                            data: varianceData.map(d => d.variance),
+                            borderColor: '#ff4b4b',
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            title: {
+                                display: true,
+                                text: 'التاريخ'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: getVarianceMetricLabel(metric)
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'تحليل الانحرافات',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper function to get metric labels for variance analysis
+        function getVarianceMetricLabel(metric) {
+            const labels = {
+                'nonconforming': 'نسبة الوحدات غير المطابقة %',
+                'defects': 'عدد العيوب',
+                'production': 'معدل الإنتاج'
+            };
+            return labels[metric] || metric;
+        }
+
+        // Simulation functionality
+        function runSimulation() {
+            const processType = document.getElementById('processType').value;
+            const defectRate = parseFloat(document.getElementById('defectRate').value) / 100;
+            const batchSize = parseInt(document.getElementById('batchSize').value);
+            const iterations = parseInt(document.getElementById('iterations').value);
+            
+            // Run Monte Carlo simulation
+            const results = [];
+            for(let i = 0; i < iterations; i++) {
+                let defects = 0;
+                for(let j = 0; j < batchSize; j++) {
+                    if(Math.random() < defectRate) {
+                        defects++;
+                    }
+                }
+                results.push(defects);
+            }
+            
+            // Calculate statistics
+            const avgDefects = results.reduce((a, b) => a + b, 0) / iterations;
+            const variance = results.reduce((a, b) => a + Math.pow(b - avgDefects, 2), 0) / iterations;
+            const stdDev = Math.sqrt(variance);
+            const qualityRate = ((batchSize - avgDefects) / batchSize) * 100;
+            
+            // Update results display
+            document.getElementById('avgDefects').textContent = avgDefects.toFixed(2);
+            document.getElementById('stdDeviation').textContent = stdDev.toFixed(2);
+            document.getElementById('qualityRate').textContent = qualityRate.toFixed(2) + '%';
+            document.getElementById('confidenceLevel').textContent = '95%';
+            
+            // Update simulation chart
+            updateSimulationChart(results);
+            updateMonteCarloChart(results);
+        }
+
+        function updateSimulationChart(results) {
+            const canvas = document.getElementById('simulationChart');
+
+            // Destroy existing chart if it exists
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            // Create histogram data
+            const binCount = Math.ceil(Math.sqrt(results.length));
+            const min = Math.min(...results);
+            const max = Math.max(...results);
+            const binWidth = (max - min) / binCount;
+
+            const bins = Array(binCount).fill(0);
+            results.forEach(value => {
+                const binIndex = Math.min(Math.floor((value - min) / binWidth), binCount - 1);
+                bins[binIndex]++;
+            });
+
+            // Create new chart
+            canvas.chart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: Array(binCount).fill(0).map((_, i) =>
+                        `${(min + i * binWidth).toFixed(1)}-${(min + (i + 1) * binWidth).toFixed(1)}`
+                    ),
+                    datasets: [{
+                        label: 'توزيع العيوب',
+                        data: bins,
+                        backgroundColor: 'rgba(118, 75, 162, 0.5)',
+                        borderColor: '#764ba2',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'التكرار'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'عدد العيوب'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'توزيع العيوب في المحاكاة',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateMonteCarloChart(results) {
+            const canvas = document.getElementById('monteCarloChart');
+            
+            // Destroy existing chart if it exists
+            if (canvas.chart != null) {
+                canvas.chart.destroy();
+            }
+
+            // Calculate cumulative results
+            const sortedResults = [...results].sort((a, b) => a - b);
+            const cumulativeData = sortedResults.map((_, index) =>
+                ((index + 1) / sortedResults.length) * 100
+            );
+
+            // Create new chart
+            canvas.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: sortedResults,
+                    datasets: [{
+                        label: 'التوزيع التراكمي',
+                        data: cumulativeData,
+                        borderColor: '#667eea',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'النسبة التراكمية %'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'عدد العيوب'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'التوزيع التراكمي للمحاكاة',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateBusinessObjectsReport() {
+            const reportType = document.getElementById('boReportType').value;
+            const dateRange = document.getElementById('boDateRange').value;
+            
+            // Simulate report generation
+            alert('جاري إنشاء تقرير BusinessObjects...');
+            setTimeout(() => {
+                updateBusinessObjectsDashboard(reportType, dateRange);
+            }, 1000);
+        }
+
+        function updateBusinessObjectsDashboard(reportType, dateRange) {
+            // Update various dashboard components
+            updateBusinessObjectsMetrics();
+            updateBusinessObjectsChart();
+            updateBusinessObjectsTable();
+        }
+
+        function updateBusinessObjectsMetrics() {
+            // Calculate and update key metrics
+            const metrics = {
+                totalReports: reports.length,
+                avgDefectRate: calculateAverageDefectRate(),
+                qualityScore: calculateQualityScore(),
+                trend: calculateQualityTrend()
+            };
+            
+            document.getElementById('boTotalReports').textContent = metrics.totalReports;
+            document.getElementById('boDefectRate').textContent = metrics.avgDefectRate.toFixed(2) + '%';
+            document.getElementById('boQualityScore').textContent = metrics.qualityScore.toFixed(2) + '%';
+            document.getElementById('boTrend').textContent = metrics.trend;
+        }
+
+        function updateBusinessObjectsChart() {
+            const canvas = document.getElementById('boAnalyticsChart');
+            
+            if (canvas.chart) {
+                canvas.chart.destroy();
+            }
+            
+            const timeData = aggregateTimeData();
+            
+            canvas.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: timeData.labels,
+                    datasets: [{
+                        label: 'معدل العيوب',
+                        data: timeData.defectRates,
+                        borderColor: '#764ba2',
+                        fill: false
+                    }, {
+                        label: 'درجة الجودة',
+                        data: timeData.qualityScores,
+                        borderColor: '#667eea',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateBusinessObjectsTable() {
+            const tableBody = document.getElementById('boReportTable');
+            tableBody.innerHTML = '';
+            
+            const recentReports = [...reports]
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 10);
+                
+            recentReports.forEach(report => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.date}</td>
+                    <td>${report.product}</td>
+                    <td>${report.qualityManager}</td>
+                    <td>${((report.nonconformingUnits / report.inspectedUnits) * 100).toFixed(2)}%</td>
+                    <td>${((report.conformingUnits / report.inspectedUnits) * 100).toFixed(2)}%</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function aggregateTimeData() {
+            const sortedReports = [...reports].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            return {
+                labels: sortedReports.map(r => r.date),
+                defectRates: sortedReports.map(r => (r.nonconformingUnits / r.inspectedUnits) * 100),
+                qualityScores: sortedReports.map(r => (r.conformingUnits / r.inspectedUnits) * 100)
+            };
+        }
+
+        function calculateAverageDefectRate() {
+            let totalDefects = 0;
+            reports.forEach(report => totalDefects += report.nonconformingUnits);
+            return (totalDefects / reports.length) * 100;
+        }
+
+        function calculateQualityScore() {
+            let totalQuality = 0;
+            reports.forEach(report => totalQuality += report.conformingUnits);
+            return (totalQuality / reports.length) * 100;
+        }
+
+        function calculateQualityTrend() {
+            // Implement logic to determine quality trend
+            // This can be a simple comparison of current metrics with past ones
+            return 'تحسن'; // Placeholder
+        }
+
+        function exportToExcel() {
+            alert('جاري التصدير إلى Excel...');
+            // Implement actual Excel export functionality here
+        }
+
+        function exportToPDF() {
+            alert('جاري التصدير إلى PDF...');
+            // Implement actual PDF export functionality here
+        }
+
+        function scheduleReport() {
+            const schedule = prompt('أدخل جدول التقارير (يومي/أسبوعي/شهري):');
+            if (schedule) {
+                alert(`تم جدولة التقرير: ${schedule}`);
+            }
+        }
+
+        function generateSAPReport() {
+            const reportType = document.getElementById('reportType').value;
+            const dateRange = document.getElementById('dateRange').value;
+            
+            // Simulate report generation
+            alert('جاري إنشاء تقرير SAP...');
+            setTimeout(() => {
+                updateSAPDashboard(reportType, dateRange);
+            }, 1000);
+        }
+
+        function updateSAPDashboard(reportType, dateRange) {
+            // Update various dashboard components
+            updateSAPQualityChart();
+            updateSAPTrendChart();
+            updateSAPKPIs();
+            updateSAPPredictions();
+        }
+
+        function updateSAPQualityChart() {
+            const canvas = document.getElementById('sapQualityChart');
+            
+            if (canvas.chart) {
+                canvas.chart.destroy();
+            }
+            
+            const qualityData = reports.slice(-10).map(report => ({
+                date: report.date,
+                defectRate: (report.nonconformingUnits / report.inspectedUnits) * 100,
+                qualityScore: (report.conformingUnits / report.inspectedUnits) * 100
+            }));
+            
+            canvas.chart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: qualityData.map(d => d.date),
+                    datasets: [{
+                        label: 'معدل العيوب',
+                        data: qualityData.map(d => d.defectRate),
+                        backgroundColor: 'rgba(118, 75, 162, 0.5)',
+                        borderColor: '#764ba2',
+                        borderWidth: 1
+                    }, {
+                        label: 'درجة الجودة',
+                        data: qualityData.map(d => d.qualityScore),
+                        backgroundColor: 'rgba(102, 126, 234, 0.5)',
+                        borderColor: '#667eea',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSAPTrendChart() {
+            const canvas = document.getElementById('sapTrendChart');
+            
+            if (canvas.chart) {
+                canvas.chart.destroy();
+            }
+            
+            const trendData = calculateTrendData();
+            
+            canvas.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: trendData.labels,
+                    datasets: [{
+                        label: 'اتجاه الجودة',
+                        data: trendData.values,
+                        borderColor: '#764ba2',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function updateSAPKPIs() {
+            const kpiContainer = document.getElementById('sapKPIs');
+            const kpis = calculateSAPKPIs();
+            
+            kpiContainer.innerHTML = `
+                <div class="kpi-grid">
+                    <div class="kpi-item">
+                        <h4>معدل العيوب</h4>
+                        <p>${kpis.defectRate.toFixed(2)}%</p>
+                    </div>
+                    <div class="kpi-item">
+                        <h4>جودة المنتج</h4>
+                        <p>${kpis.qualityScore.toFixed(2)}%</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateSAPPredictions() {
+            const canvas = document.getElementById('sapPredictionChart');
+            
+            if (canvas.chart) {
+                canvas.chart.destroy();
+            }
+            
+            const predictions = generatePredictions();
+            
+            canvas.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: predictions.labels,
+                    datasets: [{
+                        label: 'التنبؤات المستقبلية',
+                        data: predictions.values,
+                        borderColor: '#667eea',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function calculateTrendData() {
+            const sortedReports = [...reports].sort((a, b) => new Date(a.date) - new Date(b.date));
+            return {
+                labels: sortedReports.map(r => r.date),
+                values: sortedReports.map(r => (r.conformingUnits / r.inspectedUnits) * 100)
+            };
+        }
+
+        function calculateSAPKPIs() {
+            const recentReports = reports.slice(-30);
+            let totalDefects = 0;
+            let totalInspected = 0;
+            let totalConforming = 0;
+            
+            recentReports.forEach(report => {
+                totalDefects += parseInt(report.nonconformingUnits);
+                totalInspected += parseInt(report.inspectedUnits);
+                totalConforming += parseInt(report.conformingUnits);
+            });
+            
+            return {
+                defectRate: (totalDefects / totalInspected) * 100,
+                qualityScore: (totalConforming / totalInspected) * 100
+            };
+        }
+
+        function generatePredictions() {
+            const recentReports = reports.slice(-10);
+            const qualityScores = recentReports.map(r => (r.conformingUnits / r.inspectedUnits) * 100);
+            
+            // Calculate trend
+            const slope = (qualityScores[qualityScores.length - 1] - qualityScores[0]) / qualityScores.length;
+            
+            // Generate next 5 predictions
+            const predictions = [];
+            const labels = [];
+            const lastDate = new Date(recentReports[recentReports.length - 1].date);
+            
+            for(let i = 1; i <= 5; i++) {
+                const nextDate = new Date(lastDate);
+                nextDate.setDate(lastDate.getDate() + i);
+                labels.push(nextDate.toISOString().split('T')[0]);
+                predictions.push(qualityScores[qualityScores.length - 1] + (slope * i));
+            }
+            
+            return {
+                labels: labels,
+                values: predictions
+            };
+        }
+
+        function exportToExcel() {
+            alert('جاري التصدير إلى Excel...');
+            // Implement actual Excel export functionality here
+        }
+
+        function exportToPDF() {
+            alert('جاري التصدير إلى PDF...');
+            // Implement actual PDF export functionality here
+        }
+
+        function scheduleReport() {
+            const schedule = prompt('أدخل جدول التقارير (يومي/أسبوعي/شهري):');
+            if (schedule) {
+                alert(`تم جدولة التقرير: ${schedule}`);
+            }
+        }
+    </script>
+</body>
+</html>
